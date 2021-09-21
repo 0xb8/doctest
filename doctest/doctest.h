@@ -4749,6 +4749,7 @@ namespace {
             prev_error_mode_2 = _set_error_mode(_OUT_TO_STDERR);
             // In the debug version, Visual Studio pops up a separate dialog
             // offering a choice to debug the aborted program - we want to disable that.
+#if !(defined(__MINGW32__) || defined(__MINGW64__))
             prev_abort_behavior = _set_abort_behavior(0x0, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
             // In debug mode, the Windows CRT can crash with an assertion over invalid
             // input (e.g. passing an invalid file descriptor). The default handling
@@ -4756,6 +4757,7 @@ namespace {
             // Instead ask the CRT to dump such assertions to stderr non-interactively.
             prev_report_mode = _CrtSetReportMode(_CRT_ASSERT, _CRTDBG_MODE_FILE | _CRTDBG_MODE_DEBUG);
             prev_report_file = _CrtSetReportFile(_CRT_ASSERT, _CRTDBG_FILE_STDERR);
+#endif
         }
 
         static void reset() {
@@ -4767,9 +4769,11 @@ namespace {
                 std::signal(SIGABRT, prev_sigabrt_handler);
                 SetErrorMode(prev_error_mode_1);
                 _set_error_mode(prev_error_mode_2);
+#if !(defined(__MINGW32__) || defined(__MINGW64__))
                 _set_abort_behavior(prev_abort_behavior, _WRITE_ABORT_MSG | _CALL_REPORTFAULT);
                 static_cast<void>(_CrtSetReportMode(_CRT_ASSERT, prev_report_mode));
                 static_cast<void>(_CrtSetReportFile(_CRT_ASSERT, prev_report_file));
+#endif
                 isSet = false;
             }
         }
@@ -4781,7 +4785,7 @@ namespace {
         static int          prev_error_mode_2;
         static unsigned int prev_abort_behavior;
         static int          prev_report_mode;
-        static _HFILE       prev_report_file;
+        static HANDLE       prev_report_file;
         static void (DOCTEST_CDECL *prev_sigabrt_handler)(int);
         static std::terminate_handler original_terminate_handler;
         static bool isSet;
@@ -4793,7 +4797,7 @@ namespace {
     int          FatalConditionHandler::prev_error_mode_2;
     unsigned int FatalConditionHandler::prev_abort_behavior;
     int          FatalConditionHandler::prev_report_mode;
-    _HFILE       FatalConditionHandler::prev_report_file;
+    HANDLE        FatalConditionHandler::prev_report_file;
     void (DOCTEST_CDECL *FatalConditionHandler::prev_sigabrt_handler)(int);
     std::terminate_handler FatalConditionHandler::original_terminate_handler;
     bool FatalConditionHandler::isSet = false;
